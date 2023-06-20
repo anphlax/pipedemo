@@ -15,13 +15,7 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
-      deployments: write
-      # This is used to complete the identity challenge
-      # with sigstore/fulcio when running outside of PRs.
-      id-token: write
+    permissions: write-all
 
     steps:
       - name: Checkout repository
