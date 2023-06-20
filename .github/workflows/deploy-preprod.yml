@@ -1,9 +1,9 @@
-name: Build Image and Publish to GH Packages
+\name: Build Image and Publish to GH Packages
 
 on:
   push:
     # Run if semver tag without special fixes is pushed
-    tags: [ 'v*.*.*' ]
+    tags: [ 'v*.*.*-pre' ]
 
 env:
   # Use docker.io for Docker Hub if empty
@@ -75,7 +75,7 @@ jobs:
                 generate_release_notes: true,
                 name: process.env.RELEASE_TAG,
                 owner: context.repo.owner,
-                prerelease: false,
+                prerelease: true,
                 repo: context.repo.repo,
                 tag_name: process.env.RELEASE_TAG,
               });

@@ -1,7 +1,7 @@
 # This workflow will build and push a new container image to Amazon ECR,
 # and then will modify a deployment definition in order to spin up the image in AWS ECS, when there is a push to the "main" branch.
 
-name: Deploy an Image AWS EKS
+name: DEMO Deploy with ECR and EKS
 
 on:
   push:

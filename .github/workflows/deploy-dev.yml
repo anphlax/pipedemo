@@ -12,11 +12,12 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    environment: dev
+
 
     steps:
       - name: Checkout repository
@@ -56,3 +57,21 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # Use the image, read config map and deploy to Kubernetes...
+      - name: DEMO Alter deployment config and apply it in Kubernetes...
+        id: task-def
+        run: |
+          echo "# get kubeconfig for this context..."
+          echo "kubectl config use-context ..."
+          echo "# manage namespace"
+          echo "kubectl create namespace $NAMESPACE_SLUG --dry-run=client -o yaml | kubectl apply -f -"
+          echo "export DOCKER_IMAGE_TAG=$CI_COMMIT_SHORT_SHA"
+          echo "# apply the deployment"
+          echo "cat ./deployment/develop.yaml | envsubst | kubectl apply -f -"
+
+      - name: Announce Release on Slack
+        run: 'echo "Official Plugin for Slack Available: https://github.com/marketplace/actions/slack-send"'
+
+      - name: Announce Release on Teams
+        run: 'echo "Teams: Call the Webhook...."'
