@@ -16,6 +16,7 @@ jobs:
 
     runs-on: ubuntu-latest
     permissions: write-all
+    environment: preprod
 
     steps:
       - name: Checkout repository

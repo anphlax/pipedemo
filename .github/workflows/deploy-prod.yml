@@ -13,9 +13,9 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions: write-all # automated release via api needs many permissions
+    environment: production
 
     steps:
       - name: Checkout repository
