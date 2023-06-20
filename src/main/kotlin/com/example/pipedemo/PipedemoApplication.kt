@@ -21,6 +21,6 @@ class RestController {
     @GetMapping("/")
     fun hello(): String {
         count = count.inc()
-        return "hello world: count $count on date ${LocalDateTime.now().toLocalTime()}"
+        return "hello world with a twist: count $count on date ${LocalDateTime.now().toLocalTime()}"
     }
 }
