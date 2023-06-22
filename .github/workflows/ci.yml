@@ -194,6 +194,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    needs:
+      - build
+      - image
+      - deploy-*
     steps:
       - name: Announce Release on Slack
         run: 'echo "Official Plugin for Slack Available: https://github.com/marketplace/actions/slack-send"'
