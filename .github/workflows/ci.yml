@@ -39,7 +39,7 @@ jobs:
         path: artifacts
 
     - name: Contract Testing
-      run: echo "Contract Testing using Spring Cloud Contract... && sleep 2
+      run: echo "Contract Testing using Spring Cloud Contract..." && sleep 2
     
     - name: SonarCloud Emulation
       run: echo "EMULATE Running SonarCloud...." && sleep 5
