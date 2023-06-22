@@ -22,7 +22,7 @@ jobs:
         distribution: 'temurin'
         cache: maven
 
-    # Build and verification steps
+    # Build and test steps
     # https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
     - name: Clean Build with Maven
       run: mvn -B clean package --file pom.xml
@@ -35,7 +35,7 @@ jobs:
     # Ensure the artifact is the same across envs
     - uses: actions/upload-artifact@v3
       with:
-        name: package-${GITHUB_SHA}
+        name: package
         path: artifacts
 
     - name: Contract Testing
