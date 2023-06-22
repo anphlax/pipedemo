@@ -7,6 +7,12 @@ name: Java Continuous Integration
 on:
   pull_request:
     branches: [ "main" ]
+  push:
+    tags:
+      # PROD: Run if semver tag without special fixes is pushed
+      - 'v[0-9].*.*!*'
+      # PREPROD: Run if semver tag with special fixes is pushed
+      - 'v[0-9].*.*-*'
 
 jobs:
   build:
@@ -35,7 +41,7 @@ jobs:
     # Ensure the artifact is the same across envs
     - uses: actions/upload-artifact@v3
       with:
-        name: package
+        name: jarpackage
         path: artifacts
 
     - name: Contract Testing
