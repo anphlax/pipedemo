@@ -17,3 +17,6 @@ It tries to reflect on best practices and recommended ways on how to implement t
 * AWS Elastic Container Registry or Github Container Registry (GHCR) as Image Registry
 * Deployment Options for AWS EKS (Elastic Kubernetes Service)
 * Announcements on Slack, Teams
+
+# Badges
+[![Java Continuous Integration](https://github.com/anphlax/pipedemo/actions/workflows/ci.yml/badge.svg)](https://github.com/anphlax/pipedemo/actions/workflows/ci.yml)
