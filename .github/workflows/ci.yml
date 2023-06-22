@@ -21,8 +21,25 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: maven
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml
+
+    # Build and verification steps
+    # https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
+    - name: Clean Build with Maven
+      run: mvn -B clean package --file pom.xml
+
+    - name: Copy JAR Artifact
+      run: mkdir artifacts && cp target/*.jar artifacts
+
+    # Upload the JAR to a shared Storage
+    # Allows the artifact to be used in an image
+    # Ensure the artifact is the same across envs
+    - uses: actions/upload-artifact@v3
+      with:
+        name: package-${GITHUB_SHA}
+        path: artifacts
+
+    - name: Contract Testing
+      run: echo "Contract Testing using Spring Cloud Contract... && sleep 2
     
     - name: SonarCloud Emulation
       run: echo "EMULATE Running SonarCloud...." && sleep 5
