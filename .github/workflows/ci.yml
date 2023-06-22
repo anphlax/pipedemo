@@ -2,12 +2,23 @@
 # This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
 
-name: Java Continuous Integration
+name: Build, Test and Deploy
+
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ghcr.io
+  # github.repository as <account>/<repo>
+  IMAGE_NAME: ${{ github.repository }}
+
 
 on:
+  # Ensure this workflow is reusable
+  # https://docs.github.com/en/actions/using-workflows/reusing-workflows#creating-a-reusable-workflow
+  workflow_call:
   pull_request:
     branches: [ "main" ]
   push:
+    branches: [ "main" ] # TODO: For testing only
     tags:
       # PROD: Run if semver tag without special fixes is pushed
       - 'v[0-9].*.*!*'
@@ -15,8 +26,19 @@ on:
       - 'v[0-9].*.*-*'
 
 jobs:
+  log-the-inputs:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Log level: $LEVEL"
+          echo "Tags: $TAGS"
+          echo "Environment: $ENVIRONMENT"
+        env:
+          LEVEL: ${{ inputs.logLevel }}
+          TAGS: ${{ inputs.tags }}
+          ENVIRONMENT: ${{ inputs.environment }}
+
   build:
-  
     runs-on: ubuntu-latest
 
     steps:
@@ -36,16 +58,132 @@ jobs:
     - name: Copy JAR Artifact
       run: mkdir artifacts && cp target/*.jar artifacts
 
-    # Upload the JAR to a shared Storage
-    # Allows the artifact to be used in an image
-    # Ensure the artifact is the same across envs
-    - uses: actions/upload-artifact@v3
-      with:
-        name: jarpackage
-        path: artifacts
-
     - name: Contract Testing
       run: echo "Contract Testing using Spring Cloud Contract..." && sleep 2
     
     - name: SonarCloud Emulation
       run: echo "EMULATE Running SonarCloud...." && sleep 5
+
+      # Upload the JAR to a shared Storage
+      # Allows the artifact to be used in an image
+      # Ensure the artifact is the same across envs
+    - uses: actions/upload-artifact@v3
+      with:
+        name: jarpackage
+        path: artifacts
+  image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: jarpackage
+
+      # Login against a Docker registry except on PR
+      # https://github.com/docker/login-action
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@28218f9b04b4f3f62068d7b6ce6ca5b26e35336c
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Extract metadata (tags, labels) for Docker
+      # https://github.com/docker/metadata-action
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      # Build and push Docker image with Buildx (don't push on PR)
+      # https://github.com/docker/build-push-action
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@ac9327eae2b366085ac7f6a2d02df8aa8ead720a
+        with:
+          context: ./Github.Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+
+  deploy-dev:
+    name: Deploy to development env...
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    environment: dev
+    steps:
+      # Use the image, read config map and deploy to Kubernetes...
+      - name: DEMO Alter deployment config and apply it in Kubernetes...
+        id: task-def
+        run: |
+          echo "# get kubeconfig for this context..."
+          echo "kubectl config use-context ..."
+          echo "# manage namespace"
+          echo "kubectl create namespace $NAMESPACE_SLUG --dry-run=client -o yaml | kubectl apply -f -"
+          echo "export DOCKER_IMAGE_TAG=$CI_COMMIT_SHORT_SHA"
+          echo "# apply the deployment"
+          echo "cat ./deployment/develop.yaml | envsubst | kubectl apply -f -"
+
+  deploy-preprod:
+    name: Deploy to preprod env...
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    environment: preprod
+    steps:
+      # Use the image, read config map and deploy to Kubernetes...
+      - name: DEMO Alter deployment config and apply it in Kubernetes...
+        id: task-def
+        run: |
+          echo "# get kubeconfig for this context..."
+          echo "kubectl config use-context ..."
+          echo "# manage namespace"
+          echo "kubectl create namespace $NAMESPACE_SLUG --dry-run=client -o yaml | kubectl apply -f -"
+          echo "export DOCKER_IMAGE_TAG=$CI_COMMIT_SHORT_SHA"
+          echo "# apply the deployment"
+          echo "cat ./deployment/develop.yaml | envsubst | kubectl apply -f -"
+
+
+  deploy-prod:
+    name: Deploy to PRODUCTION env...
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    environment: prod
+    steps:
+      # Use the image, read config map and deploy to Kubernetes...
+      - name: DEMO Alter deployment config and apply it in Kubernetes...
+        id: task-def
+        run: |
+          echo "# get kubeconfig for this context..."
+          echo "kubectl config use-context ..."
+          echo "# manage namespace"
+          echo "kubectl create namespace $NAMESPACE_SLUG --dry-run=client -o yaml | kubectl apply -f -"
+          echo "export DOCKER_IMAGE_TAG=$CI_COMMIT_SHORT_SHA"
+          echo "# apply the deployment"
+          echo "cat ./deployment/develop.yaml | envsubst | kubectl apply -f -"
+
+  announce:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Announce Release on Slack
+        run: 'echo "Official Plugin for Slack Available: https://github.com/marketplace/actions/slack-send"'
+
+      - name: Announce Release on Teams
+        run: 'echo "Teams: Call the Webhook...."'
