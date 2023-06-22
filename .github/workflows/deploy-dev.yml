@@ -1,4 +1,4 @@
-name: deploy-dev
+name: Build DEV image, push and DEMO deployment
 
 on:
   push:

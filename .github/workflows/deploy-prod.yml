@@ -1,4 +1,4 @@
-name: Build Image and Publish to GH Packages
+name: Build PROD image, push and DEMO deployment
 
 on:
   push:
