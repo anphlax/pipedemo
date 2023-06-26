@@ -157,7 +157,6 @@ jobs:
       - build
       - image
     if: github.event_name != 'pull_request'
-    environment: dev
 
   # Deploy to preprod, when...
   # ...continuous integration steps done.
@@ -169,7 +168,6 @@ jobs:
       - build
       - image
     if: github.event.ref == 'ref/tags/v[0-9]+.[0-9]+.[0-9]+-PRE'
-    environment: preprod
 
   # Deploy to preprod, when...
   # ...continuous integration steps done.
@@ -181,5 +179,4 @@ jobs:
       - build
       - image
     if: github.event.ref == 'ref/tags/v[0-9]+.[0-9]+.[0-9]+'
-    environment: prod
 
