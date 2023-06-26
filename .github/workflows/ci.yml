@@ -64,10 +64,10 @@ jobs:
       run: mkdir artifacts && cp target/*.jar artifacts/
 
     - name: Contract Testing
-      run: echo "Contract Testing using Spring Cloud Contract..." && sleep 2
+      run: echo "Contract Testing using Spring Cloud Contract..." && sleep 1
     
     - name: SonarCloud Emulation
-      run: echo "EMULATE Running SonarCloud...." && sleep 5
+      run: echo "EMULATE Running SonarCloud...." && sleep 1
 
       # Upload the JAR to a shared Storage
       # Allows the artifact to be used in an image
