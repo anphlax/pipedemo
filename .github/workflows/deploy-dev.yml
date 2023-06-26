@@ -1,8 +1,7 @@
-name: Build DEV image, push and DEMO deployment
+name: deploy-dev
 
 on:
-  push:
-    branches: [ "main" ]
+  workflow_call:
 
 env:
   # Use docker.io for Docker Hub if empty

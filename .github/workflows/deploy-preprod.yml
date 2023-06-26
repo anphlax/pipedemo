@@ -1,9 +1,7 @@
-name: Build PREPROD image, push and DEMO deployment
+name: deploy-preprod
 
 on:
-  push:
-    # Run if semver tag with special fixes is pushed
-    tags: [ 'v[0-9].*.*-*' ]
+  workflow_call:
 
 env:
   # Use docker.io for Docker Hub if empty

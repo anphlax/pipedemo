@@ -1,9 +1,7 @@
-name: Build PROD image, push and DEMO deployment
+name: deploy-prod
 
 on:
-  push:
-    # Run if semver tag without special fixes is pushed
-    tags: [ 'v[0-9].*.*!*' ]
+  workflow_call:
 
 env:
   # Use docker.io for Docker Hub if empty
@@ -91,10 +89,4 @@ jobs:
           echo "export DOCKER_IMAGE_TAG=$CI_COMMIT_SHORT_SHA"
           echo "# apply the deployment"
           echo "cat ./deployment/develop.yaml | envsubst | kubectl apply -f -"
-
-      - name: Announce Release on Slack
-        run: 'echo "Official Plugin for Slack Available: https://github.com/marketplace/actions/slack-send"'
-
-      - name: Announce Release on Teams
-        run: 'echo "Teams: Call the Webhook...."'
 

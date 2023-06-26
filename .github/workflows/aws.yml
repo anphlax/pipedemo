@@ -1,11 +1,10 @@
 # This workflow will build and push a new container image to Amazon ECR,
 # and then will modify a deployment definition in order to spin up the image in AWS ECS, when there is a push to the "main" branch.
 
-name: DEMO Deploy with ECR and EKS
+name: Build image and push to AWS ECR
 
 on:
-  push:
-    branches: [ "main" ]
+  workflow_call:
 
 env:
   AWS_REGION: MY_AWS_REGION                   # set this to your preferred AWS region, e.g. us-west-1
@@ -49,14 +48,3 @@ jobs:
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
-
-    - name: Alter the deployment config and apply it in EKS...
-      id: task-def
-      run: |
-        echo "# get kubeconfig for this context..."
-        echo "kubectl config use-context ..."
-        echo "# manage namespace"
-        echo "kubectl create namespace $NAMESPACE_SLUG --dry-run=client -o yaml | kubectl apply -f -"
-        echo "export DOCKER_IMAGE_TAG=$CI_COMMIT_SHORT_SHA"
-        echo "# apply the deployment"
-        echo "cat ./deployment/develop.yaml | envsubst | kubectl apply -f -"
