@@ -153,6 +153,7 @@ jobs:
   # ...a PR was merged.
   deploy-dev:
     uses: ./.github/workflows/deploy.yml
+    permissions: write-all
     needs:
       - build
       - image
@@ -164,6 +165,7 @@ jobs:
   # ...a PRE suffixed TAG was pushed.
   deploy-preprod:
     uses: ./.github/workflows/deploy.yml
+    permissions: write-all
     needs:
       - build
       - image
@@ -175,6 +177,7 @@ jobs:
   # ...a regular semvar tag was pushed.
   deploy-prod:
     uses: ./.github/workflows/deploy.yml
+    permissions: write-all
     needs:
       - build
       - image
