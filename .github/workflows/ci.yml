@@ -122,7 +122,8 @@ jobs:
         with:
           context: .
           file: ./Github.Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
+          platforms: linux/amd64,linux/arm64
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -207,18 +208,6 @@ jobs:
           echo "cat ./deployment/develop.yaml | envsubst | kubectl apply -f -"
 
   announce:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    needs:
-      - build
-      - image
-      - deploy-dev
-      - deploy-preprod
-      - deploy-prod
-    steps:
-      - name: Announce Release on Slack
-        run: 'echo "Official Plugin for Slack Available: https://github.com/marketplace/actions/slack-send"'
+    secrets: inherit
+    uses: ./.github/workflows/announce.yml
 
-      - name: Announce Release on Teams
-        run: 'echo "Teams: Call the Webhook...."'
