@@ -158,6 +158,10 @@ jobs:
           echo "# apply the deployment"
           echo "cat ./deployment/develop.yaml | envsubst | kubectl apply -f -"
 
+      - name: Annouce
+        uses: ./.github/workflows/announce.yml
+        secrets: inherit
+
   deploy-preprod:
     name: Deploy to preprod env...
     runs-on: ubuntu-latest
@@ -182,6 +186,9 @@ jobs:
           echo "# apply the deployment"
           echo "cat ./deployment/develop.yaml | envsubst | kubectl apply -f -"
 
+      - name: Annouce
+        uses: ./.github/workflows/announce.yml
+        secrets: inherit
 
   deploy-prod:
     name: Deploy to PRODUCTION env...
@@ -207,7 +214,6 @@ jobs:
           echo "# apply the deployment"
           echo "cat ./deployment/develop.yaml | envsubst | kubectl apply -f -"
 
-  announce:
-    secrets: inherit
-    uses: ./.github/workflows/announce.yml
-
+      - name: Annouce
+        uses: ./.github/workflows/announce.yml
+        secrets: inherit
