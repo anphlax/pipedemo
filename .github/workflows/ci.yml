@@ -113,6 +113,15 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # How to manage tags with the metadata module:
+          # https://docs.docker.com/build/ci/github-actions/manage-tags-labels/
+          # Important: https://github.com/docker/metadata-action#typesha
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=sha
+            
 
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
@@ -165,6 +174,10 @@ jobs:
     secrets: inherit
 
 
+  # Deploy to preprod, when...
+  # ...continuous integration steps done.
+  # ...build artifact successful.
+  # ...a PRE suffixed TAG was pushed.
   deploy-preprod:
     name: Deploy preprod
     runs-on: ubuntu-latest
@@ -194,6 +207,10 @@ jobs:
     uses: ./.github/workflows/announce.yml
     secrets: inherit
 
+  # Deploy to preprod, when...
+  # ...continuous integration steps done.
+  # ...build artifact successful.
+  # ...a PRE suffixed TAG was pushed.
   deploy-prod:
     name: Deploy PRODUCTION
     runs-on: ubuntu-latest
