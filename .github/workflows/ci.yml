@@ -92,6 +92,9 @@ jobs:
         with:
           name: jarpackage
 
+      # https://github.com/docker/setup-qemu-action
+      - name: Set up QEMU (Multiplattform Build Support)
+        uses: docker/setup-qemu-action@v2
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -112,6 +115,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
+          # The basename of the image
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           # How to manage tags with the metadata module:
           # https://docs.docker.com/build/ci/github-actions/manage-tags-labels/
@@ -211,7 +215,7 @@ jobs:
   # Deploy to preprod, when...
   # ...continuous integration steps done.
   # ...build artifact successful.
-  # ...a PRE suffixed TAG was pushed.
+  # ...a regular semvar tag was pushed.
   deploy-prod:
     name: Deploy PRODUCTION
     runs-on: ubuntu-latest
@@ -236,6 +240,7 @@ jobs:
           echo "# apply the deployment"
           echo "cat ./deployment/develop.yaml | envsubst | kubectl apply -f -"
 
+  # Announce to external messenger services using a reusable workflow call in this job
   announce-prod:
     needs: deploy-prod
     uses: ./.github/workflows/announce.yml
