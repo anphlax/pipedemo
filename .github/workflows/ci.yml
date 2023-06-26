@@ -135,7 +135,7 @@ jobs:
   # ...build artifact successful.
   # ...a PR was merged.
   deploy-dev:
-    name: Deploy to development env...
+    name: Deploy development
     runs-on: ubuntu-latest
     needs:
       - build
@@ -158,12 +158,15 @@ jobs:
           echo "# apply the deployment"
           echo "cat ./deployment/develop.yaml | envsubst | kubectl apply -f -"
 
-      - name: Annouce
-        uses: ./.github/workflows/announce.yml
-        secrets: inherit
+
+  announce-dev:
+    needs: deploy-dev
+    uses: ./.github/workflows/announce.yml
+    secrets: inherit
+
 
   deploy-preprod:
-    name: Deploy to preprod env...
+    name: Deploy preprod
     runs-on: ubuntu-latest
     needs:
       - build
@@ -186,12 +189,13 @@ jobs:
           echo "# apply the deployment"
           echo "cat ./deployment/develop.yaml | envsubst | kubectl apply -f -"
 
-      - name: Annouce
-        uses: ./.github/workflows/announce.yml
-        secrets: inherit
+  announce-preprod:
+    needs: deploy-preprod
+    uses: ./.github/workflows/announce.yml
+    secrets: inherit
 
   deploy-prod:
-    name: Deploy to PRODUCTION env...
+    name: Deploy PRODUCTION
     runs-on: ubuntu-latest
     needs:
       - build
@@ -214,6 +218,7 @@ jobs:
           echo "# apply the deployment"
           echo "cat ./deployment/develop.yaml | envsubst | kubectl apply -f -"
 
-      - name: Annouce
-        uses: ./.github/workflows/announce.yml
-        secrets: inherit
+  announce-prod:
+    needs: deploy-prod
+    uses: ./.github/workflows/announce.yml
+    secrets: inherit
