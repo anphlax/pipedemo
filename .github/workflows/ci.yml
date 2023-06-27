@@ -1,8 +1,7 @@
-# This workflow will run continuous be executed on every open pull request
 # This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
 
-name: Build, Test and Deploy
+name: Build, Test and Deploy (Environment Promotion Strategy)
 
 env:
   # Use docker.io for Docker Hub if empty
@@ -31,7 +30,7 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+-PRE'
 
 jobs:
-  build:
+  maven:
     runs-on: ubuntu-latest
 
     steps:
@@ -64,7 +63,6 @@ jobs:
       with:
         name: jarpackage
         path: artifacts/
-
   image:
     runs-on: ubuntu-latest
     needs:
@@ -150,30 +148,23 @@ jobs:
   # Deploy to dev, when...
   # ...continuous integration steps done.
   # ...build artifact successful.
-  # ...a PR was merged.
+  # ...a tag is pushed.
   deploy-dev:
-    name: Deploy development
     runs-on: ubuntu-latest
     needs:
       - build
       - image
-    if: github.event_name != 'pull_request' && github.event.ref != 'ref/tags/v**'
+    if: github.event_name != 'pull_request'
     permissions:
       contents: read
       packages: write
     environment: dev
     steps:
       # Use the image, read config map and deploy to Kubernetes...
-      - name: DEMO Alter deployment config and apply it in Kubernetes...
+      - name: Kubernetes deployment
         id: task-def
         run: |
-          echo "# get kubeconfig for this context..."
-          echo "kubectl config use-context ..."
-          echo "# manage namespace"
-          echo "kubectl create namespace $NAMESPACE_SLUG --dry-run=client -o yaml | kubectl apply -f -"
-          echo "export DOCKER_IMAGE_TAG=$CI_COMMIT_SHORT_SHA"
-          echo "# apply the deployment"
-          echo "cat ./deployment/develop.yaml | envsubst | kubectl apply -f -"
+          echo "Do the k8s / helm Deployment stuff..."
 
 
   announce-dev:
@@ -192,7 +183,7 @@ jobs:
       - build
       - image
       - deploy-dev
-    if: github.event.ref == 'ref/tags/v[0-9]+.[0-9]+.[0-9]+-PRE'
+    if: github.event.ref == 'ref/tags/v[0-9]+.[0-9]+.[0-9]+'
     permissions:
       contents: read
       packages: write
@@ -224,15 +215,10 @@ jobs:
             }
 
       # Use the image, read config map and deploy to Kubernetes...
-      - name: modify deployment config and deploy to k8s cluster
+      - name: Kubernetes deployment
+        id: task-def
         run: |
-          echo "# get kubeconfig for this context..."
-          echo "kubectl config use-context ..."
-          echo "# manage namespace"
-          echo "kubectl create namespace $NAMESPACE_SLUG --dry-run=client -o yaml | kubectl apply -f -"
-          echo "export DOCKER_IMAGE_TAG=$CI_COMMIT_SHORT_SHA"
-          echo "# apply the deployment"
-          echo "cat ./deployment/develop.yaml | envsubst | kubectl apply -f -"
+          echo "Do the k8s / helm Deployment stuff..."
 
   announce-preprod:
     needs: deploy-preprod
@@ -279,15 +265,10 @@ jobs:
             
 
       # Use the image, read config map and deploy to Kubernetes...
-      - name: DEMO Alter deployment config and apply it in Kubernetes...
+      - name: Kubernetes deployment
+        id: task-def
         run: |
-          echo "# get kubeconfig for this context..."
-          echo "kubectl config use-context ..."
-          echo "# manage namespace"
-          echo "kubectl create namespace $NAMESPACE_SLUG --dry-run=client -o yaml | kubectl apply -f -"
-          echo "export DOCKER_IMAGE_TAG=$CI_COMMIT_SHORT_SHA"
-          echo "# apply the deployment"
-          echo "cat ./deployment/develop.yaml | envsubst | kubectl apply -f -"
+          echo "Do the k8s / helm Deployment stuff..."
 
   # Announce to external messenger services using a reusable workflow call in this job
   announce-prod:
