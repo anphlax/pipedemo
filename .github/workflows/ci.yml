@@ -248,6 +248,7 @@ jobs:
     needs:
       - build
       - image
+      - deploy-preprod
     if: github.event.ref == 'ref/tags/v[0-9]+.[0-9]+.[0-9]+'
     permissions:
       contents: read
