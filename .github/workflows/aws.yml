@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   deploy:
-    name: AWS Deployment
+    name: AWS ECR Deployment
     runs-on: ubuntu-latest
     environment: production
 

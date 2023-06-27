@@ -152,34 +152,142 @@ jobs:
   # ...build artifact successful.
   # ...a PR was merged.
   deploy-dev:
-    uses: ./.github/workflows/deploy.yml
-    permissions: write-all
+    name: Deploy development
+    runs-on: ubuntu-latest
     needs:
       - build
       - image
     if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      packages: write
+    environment: dev
+    steps:
+      # Use the image, read config map and deploy to Kubernetes...
+      - name: DEMO Alter deployment config and apply it in Kubernetes...
+        id: task-def
+        run: |
+          echo "# get kubeconfig for this context..."
+          echo "kubectl config use-context ..."
+          echo "# manage namespace"
+          echo "kubectl create namespace $NAMESPACE_SLUG --dry-run=client -o yaml | kubectl apply -f -"
+          echo "export DOCKER_IMAGE_TAG=$CI_COMMIT_SHORT_SHA"
+          echo "# apply the deployment"
+          echo "cat ./deployment/develop.yaml | envsubst | kubectl apply -f -"
+
+
+  announce-dev:
+    needs: deploy-dev
+    uses: ./.github/workflows/announce.yml
+    secrets: inherit
+
 
   # Deploy to preprod, when...
   # ...continuous integration steps done.
   # ...build artifact successful.
   # ...a PRE suffixed TAG was pushed.
   deploy-preprod:
-    uses: ./.github/workflows/deploy.yml
-    permissions: write-all
+    runs-on: ubuntu-latest
     needs:
       - build
       - image
     if: github.event.ref == 'ref/tags/v[0-9]+.[0-9]+.[0-9]+-PRE'
+    permissions:
+      contents: read
+      packages: write
+    environment: preprod
+    steps:
+      - name: create pre-release
+        uses: "actions/github-script@v6"
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          script: |
+            try {
+              const response = await github.rest.repos.createRelease({
+                draft: false,
+                generate_release_notes: true,
+                name: process.env.RELEASE_TAG,
+                owner: context.repo.owner,
+                prerelease: true,
+                repo: context.repo.repo,
+                tag_name: process.env.RELEASE_TAG,
+              });
+
+              core.exportVariable('RELEASE_ID', response.data.id);
+              core.exportVariable('RELEASE_UPLOAD_URL', response.data.upload_url);
+            } catch (error) {
+              core.setFailed(error.message);
+            }
+
+      # Use the image, read config map and deploy to Kubernetes...
+      - name: modify deployment config and deploy to k8s cluster
+        id: task-def
+        run: |
+          echo "# get kubeconfig for this context..."
+          echo "kubectl config use-context ..."
+          echo "# manage namespace"
+          echo "kubectl create namespace $NAMESPACE_SLUG --dry-run=client -o yaml | kubectl apply -f -"
+          echo "export DOCKER_IMAGE_TAG=$CI_COMMIT_SHORT_SHA"
+          echo "# apply the deployment"
+          echo "cat ./deployment/develop.yaml | envsubst | kubectl apply -f -"
+
+  announce-preprod:
+    needs: deploy-preprod
+    uses: ./.github/workflows/announce.yml
+    secrets: inherit
 
   # Deploy to preprod, when...
   # ...continuous integration steps done.
   # ...build artifact successful.
   # ...a regular semvar tag was pushed.
   deploy-prod:
-    uses: ./.github/workflows/deploy.yml
-    permissions: write-all
+    runs-on: ubuntu-latest
     needs:
       - build
       - image
-    if: github.event.ref == 'ref/tags/v[0-9]+.[0-9]+.[0-9]+'
+    if: github.event.ref == 'ref/tags/v[0-9]+.[0-9]+.[0-9]+-PRE'
+    permissions:
+      contents: read
+      packages: write
+    environment: prod
+    steps:
+      - name: create release
+        uses: "actions/github-script@v6"
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          script: |
+            try {
+              const response = await github.rest.repos.createRelease({
+                draft: false,
+                generate_release_notes: true,
+                name: process.env.RELEASE_TAG,
+                owner: context.repo.owner,
+                prerelease: false,
+                repo: context.repo.repo,
+                tag_name: process.env.RELEASE_TAG,
+              });
 
+              core.exportVariable('RELEASE_ID', response.data.id);
+              core.exportVariable('RELEASE_UPLOAD_URL', response.data.upload_url);
+            } catch (error) {
+              core.setFailed(error.message);
+            }
+            
+
+      # Use the image, read config map and deploy to Kubernetes...
+      - name: DEMO Alter deployment config and apply it in Kubernetes...
+        id: task-def
+        run: |
+          echo "# get kubeconfig for this context..."
+          echo "kubectl config use-context ..."
+          echo "# manage namespace"
+          echo "kubectl create namespace $NAMESPACE_SLUG --dry-run=client -o yaml | kubectl apply -f -"
+          echo "export DOCKER_IMAGE_TAG=$CI_COMMIT_SHORT_SHA"
+          echo "# apply the deployment"
+          echo "cat ./deployment/develop.yaml | envsubst | kubectl apply -f -"
+
+  # Announce to external messenger services using a reusable workflow call in this job
+  announce-prod:
+    needs: deploy-prod
+    uses: ./.github/workflows/announce.yml
+    secrets: inherit
