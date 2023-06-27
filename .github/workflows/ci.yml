@@ -157,9 +157,7 @@ jobs:
     needs:
       - build
       - image
-    if:
-      - github.event_name != 'pull_request'
-      - github.event.ref != 'ref/tags/v*'
+    if: github.event_name != 'pull_request' && github.event.ref != 'ref/tags/v*'
     permissions:
       contents: read
       packages: write
