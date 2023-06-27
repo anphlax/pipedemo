@@ -245,7 +245,7 @@ jobs:
     needs:
       - build
       - image
-    if: github.event.ref == 'ref/tags/v[0-9]+.[0-9]+.[0-9]+-PRE'
+    if: github.event.ref == 'ref/tags/v[0-9]+.[0-9]+.[0-9]+'
     permissions:
       contents: read
       packages: write
