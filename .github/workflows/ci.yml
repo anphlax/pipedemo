@@ -157,7 +157,7 @@ jobs:
     needs:
       - build
       - image
-    if: github.event_name != 'pull_request' && github.event.ref != 'ref/tags/v*'
+    if: github.event_name != 'pull_request' && github.event.ref != 'ref/tags/v**'
     permissions:
       contents: read
       packages: write
@@ -191,12 +191,16 @@ jobs:
     needs:
       - build
       - image
+      - deploy-dev
     if: github.event.ref == 'ref/tags/v[0-9]+.[0-9]+.[0-9]+-PRE'
     permissions:
       contents: read
       packages: write
     environment: preprod
     steps:
+      - name: determine tag
+        run: "echo \"RELEASE_TAG=${GITHUB_REF#refs/tags/}\" >> $GITHUB_ENV"
+
       - name: create pre-release
         uses: "actions/github-script@v6"
         with:
@@ -221,7 +225,6 @@ jobs:
 
       # Use the image, read config map and deploy to Kubernetes...
       - name: modify deployment config and deploy to k8s cluster
-        id: task-def
         run: |
           echo "# get kubeconfig for this context..."
           echo "kubectl config use-context ..."
@@ -276,7 +279,6 @@ jobs:
 
       # Use the image, read config map and deploy to Kubernetes...
       - name: DEMO Alter deployment config and apply it in Kubernetes...
-        id: task-def
         run: |
           echo "# get kubeconfig for this context..."
           echo "kubectl config use-context ..."
