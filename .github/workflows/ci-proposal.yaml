@@ -23,41 +23,46 @@ on:
   # Run if a tag is pushed
   push:
     branches: [ "main" ] # TODO: For testing only
+    tags:
+      # PROD: Run if semver tag without special fixes is pushed
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      # PREPROD: Run if semver tag with special fixes is pushed
+      - 'v[0-9]+.[0-9]+.[0-9]+-PRE'
 
 jobs:
   maven:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up JDK 17
-      uses: actions/setup-java@v3
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: maven
+      - uses: actions/checkout@v3
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
 
-    # Build and test steps
-    # https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
-    - name: Clean Build with Maven
-      run: mvn -B clean package --file pom.xml
+      # Build and test steps
+      # https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
+      - name: Clean Build with Maven
+        run: mvn -B clean package --file pom.xml
 
-    - name: Copy JAR Artifact
-      run: mkdir artifacts && cp target/*.jar artifacts/
+      - name: Copy JAR Artifact
+        run: mkdir artifacts && cp target/*.jar artifacts/
 
-    - name: Contract Testing
-      run: echo "Contract Testing using Spring Cloud Contract..." && sleep 1
-    
-    - name: SonarCloud Emulation
-      run: echo "EMULATE Running SonarCloud...." && sleep 1
+      - name: Contract Testing
+        run: echo "Contract Testing using Spring Cloud Contract..." && sleep 1
 
-      # Upload the JAR to a shared Storage
-      # Allows the artifact to be used in an image
-      # Ensure the artifact is the same across envs
-    - uses: actions/upload-artifact@v3
-      with:
-        name: jarpackage
-        path: artifacts/
+      - name: SonarCloud Emulation
+        run: echo "EMULATE Running SonarCloud...." && sleep 1
+
+        # Upload the JAR to a shared Storage
+        # Allows the artifact to be used in an image
+        # Ensure the artifact is the same across envs
+      - uses: actions/upload-artifact@v3
+        with:
+          name: jarpackage
+          path: artifacts/
   image:
     runs-on: ubuntu-latest
     needs:
@@ -122,7 +127,7 @@ jobs:
             type=edge,branch=main
             type=semver,pattern={{version}}
             type=sha,prefix=commit-,format=short
-            
+      
 
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
@@ -143,7 +148,7 @@ jobs:
   # Deploy to dev, when...
   # ...continuous integration steps done.
   # ...build artifact successful.
-  # ...a tag is pushed or a PR is merged (TODO: Decide!)
+  # ...a tag is pushed.
   deploy-dev:
     runs-on: ubuntu-latest
     needs:
@@ -171,20 +176,44 @@ jobs:
   # Deploy to preprod, when...
   # ...continuous integration steps done.
   # ...build artifact successful.
-  # ...a version tag was pushed and
-  # ...deployment to develop was successful.
-  # ...deployment was accepted by reviewers.
+  # ...a PRE suffixed TAG was pushed.
   deploy-preprod:
     runs-on: ubuntu-latest
     needs:
       - maven
       - image
       - deploy-dev
+    if: github.event.ref == 'ref/tags/v[0-9]+.[0-9]+.[0-9]+'
     permissions:
       contents: read
       packages: write
     environment: preprod
     steps:
+      - name: determine tag
+        run: "echo \"RELEASE_TAG=${GITHUB_REF#refs/tags/}\" >> $GITHUB_ENV"
+
+      - name: create pre-release
+        uses: "actions/github-script@v6"
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          script: |
+            try {
+              const response = await github.rest.repos.createRelease({
+                draft: false,
+                generate_release_notes: true,
+                name: process.env.RELEASE_TAG,
+                owner: context.repo.owner,
+                prerelease: true,
+                repo: context.repo.repo,
+                tag_name: process.env.RELEASE_TAG,
+              });
+
+              core.exportVariable('RELEASE_ID', response.data.id);
+              core.exportVariable('RELEASE_UPLOAD_URL', response.data.upload_url);
+            } catch (error) {
+              core.setFailed(error.message);
+            }
+
       # Use the image, read config map and deploy to Kubernetes...
       - name: Kubernetes deployment
         id: task-def
@@ -199,14 +228,14 @@ jobs:
   # Deploy to preprod, when...
   # ...continuous integration steps done.
   # ...build artifact successful.
-  # ...deployment to preprod was successful.
-  # ...deployment was accepted by reviewers.
+  # ...a regular semvar tag was pushed.
   deploy-prod:
     runs-on: ubuntu-latest
     needs:
       - maven
       - image
       - deploy-preprod
+    if: github.event.ref == 'ref/tags/v[0-9]+.[0-9]+.[0-9]+'
     permissions:
       contents: read
       packages: write
@@ -233,7 +262,7 @@ jobs:
             } catch (error) {
               core.setFailed(error.message);
             }
-            
+      
 
       # Use the image, read config map and deploy to Kubernetes...
       - name: Kubernetes deployment
